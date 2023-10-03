@@ -1,1 +1,2 @@
-dabcd 12314
+ a = 2; /* Um comentario */ // outro */
+`cdtewdu ${vddu}  sdvcuufv`

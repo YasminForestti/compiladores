@@ -1,0 +1,46 @@
+
+Test 12: Comentarios
+Incorrect program output
+--- Input ---
+ a = 2; /* Um comentario */
+
+--- Expected output (exact text)---
+256 a
+61 =
+259 2
+59 ;
+267 /* Um comentario */
+
+Test 13: Não juntar comentarios
+Incorrect program output
+--- Input ---
+ a = 2; /* Um comentario */ // outro */
+
+
+
+--- Expected output (exact text)---
+256 a
+61 =
+259 2
+59 ;
+267 /* Um comentario */
+267 // outro */
+
+Test 14: Comentario com caracteres * e /
+Incorrect program output
+--- Input ---
+/* Texto
++ / * a
+*/
+
+
+--- Expected output (text)---
+267 /* Texto
++ / * a
+*/
+
+
+Summary of tests
++------------------------------+
+| 14 tests run/11 tests passed |
++------------------------------+
