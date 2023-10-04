@@ -1,0 +1,42 @@
+S ->  S; A
+      S; print E print("print #")
+      vazio
+
+A -> print(lexema) id = E print("= ^")
+
+
+
+E -> E + T print("+")
+     E - T print("-")
+     T
+
+
+
+T -> T * U print("*")
+     T/U   print("/")
+     U
+
+U -> print("0")  -U  print("-")
+     print("0")  +U  print("+")
+     P
+
+
+P -> FAT^P  print("^")
+     FAT
+
+
+FAT -> F!  print("fat #")
+     | F
+
+F -> print("lexema @") ID  
+     print(lexema)  NUM 
+     print(lexema) FLOAT 
+     print(lexema) STRING 
+     (E)
+     func(ARG)   print("func #") 
+
+
+obs: guardar func em uma variável local
+
+ARGS -> E , ARGS
+        vazio

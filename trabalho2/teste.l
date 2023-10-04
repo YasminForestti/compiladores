@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <map>
-
+#include <string.h>
 using namespace std;
 
 int token;
@@ -11,13 +11,15 @@ string lexema;
 
 void casa( int );
 
-enum { ID = 256, NUM, PRINT, FLOAT, STRING };
+enum { ID = 256, NUM, PRINT, FLOAT, STRING , FUNC };
 
 void E();
 void F();
 void T();
 void E_Linha();
 void T_Linha();
+void ARG();
+void U();
 
 map<int,string> nome_tokens = {
   { ID, "identificador" },
@@ -32,19 +34,22 @@ LETRA	[A-Za-z_]
 
 NUM	{DIGITO}+
 ID	{LETRA}({LETRA}|{DIGITO})*
-
+PARENTESES "("
+FUNCTION {ID}"("
 %%
 
 {WS}  		{ }
 
 "print" { lexema = yytext;  return PRINT;}
 {NUM} 	{ lexema = yytext;  return NUM; }
-{ID}		{ lexema = yytext;  return ID; }
-
+{FUNCTION}   {lexema = yytext;
+                lexema = lexema.substr(0, lexema.length() - 1); 
+                ; return FUNC;}
+{ID}		{ lexema = yytext; return ID; }
+              
 
 \"([^"]|\\\"|\"\")+\"       { 
                               lexema = yytext;      
-                              // lexema = remove_first_last_scapes('\"', lexema);
                               return STRING; 
                             }
   
@@ -82,6 +87,13 @@ void casa( int esperado ) {
   }
 }
 
+void ARG(){
+    E();
+    if(token == ','){
+      casa(',');
+      ARG();
+    }
+}
 
 void F() {
   switch( token ) {
@@ -103,6 +115,12 @@ void F() {
              E();
              casa( ')' );
              break;
+    case FUNC: string func = lexema;
+               casa(FUNC);
+               ARG();
+               casa( ')' );
+               cout << func << " #" << ' ';
+               break;
   }
 }
 
@@ -200,12 +218,12 @@ void S() {
   }
 }
 
-// int main() {
-//   token = next_token();
-//   S();
+int main() {
+  token = next_token();
+  S();
   
-//   cout << '\n';
-//   return 0;
-// }
+  cout << '\n';
+  return 0;
+}
 
 
