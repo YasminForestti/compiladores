@@ -4,8 +4,8 @@ all: saida entrada.txt
 lex.yy.c: teste.l
 	lex teste.l
 
-saida: lex.yy.c main.cc 
-	g++ -std=c++17 main.cc -o saida -lfl
+saida: lex.yy.c 
+	g++ -std=c++17 lex.yy.c -o saida -ll
 	
 clean:
 	rm saida lex.yy.c

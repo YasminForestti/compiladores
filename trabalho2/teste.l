@@ -18,8 +18,15 @@ void F();
 void T();
 void E_Linha();
 void T_Linha();
-void ARG();
+void ARGUMENTS();
 void U();
+void POT_linha();
+void POT();
+void FATORIAL();
+void FATORIAL_linha();
+void A();
+void S();
+
 
 map<int,string> nome_tokens = {
   { ID, "identificador" },
@@ -31,11 +38,17 @@ map<int,string> nome_tokens = {
 WS	[ \n\t]
 DIGITO	[0-9]
 LETRA	[A-Za-z_]
-
 NUM	{DIGITO}+
-ID	{LETRA}({LETRA}|{DIGITO})*
-PARENTESES "("
+
+UNDERLINE   "_"
+DOLAR  "$"
+HEAD  {LETRA}|{UNDERLINE}|{DOLAR}
+TAIL ({LETRA}|{DIGITO}|{UNDERLINE})*
+ID      ({HEAD}){TAIL}
+
 FUNCTION {ID}"("
+NUMFLOAT  ({NUM}\.{NUM}([eE][+-]?{NUM})?)|{NUM}[eE][+-]?{NUM}
+STR    \"([^"]|\\\"|\"\")+\" 
 %%
 
 {WS}  		{ }
@@ -46,16 +59,8 @@ FUNCTION {ID}"("
                 lexema = lexema.substr(0, lexema.length() - 1); 
                 ; return FUNC;}
 {ID}		{ lexema = yytext; return ID; }
-              
-
-\"([^"]|\\\"|\"\")+\"       { 
-                              lexema = yytext;      
-                              return STRING; 
-                            }
-  
-
-
-{NUM}([.]{NUM})?([eE][-+]?{NUM})?  { lexema = yytext; return FLOAT; }
+{STR}      {lexema = yytext; return STRING;}
+{NUMFLOAT}  { lexema = yytext; return FLOAT; }
 
 .		    { return yytext[0]; }
 
@@ -86,12 +91,11 @@ void casa( int esperado ) {
     exit( 1 );
   }
 }
-
-void ARG(){
+void ARGUMENTS(){
     E();
     if(token == ','){
       casa(',');
-      ARG();
+      ARGUMENTS();
     }
 }
 
@@ -117,9 +121,36 @@ void F() {
              break;
     case FUNC: string func = lexema;
                casa(FUNC);
-               ARG();
+               ARGUMENTS();
                casa( ')' );
                cout << func << " #" << ' ';
+               break;
+  }
+}
+
+void FATORIAL_linha(){
+  if (token == '!'){
+    casa('!');
+    cout << "fat" << " # ";
+    FATORIAL_linha();
+  }
+}
+
+void FATORIAL(){
+    F();
+    FATORIAL_linha();
+}
+
+void POT(){
+    FATORIAL();
+    POT_linha();
+}
+
+void POT_linha(){
+    switch( token ) {
+    case '^' : casa('^');
+               POT();
+               cout <<  "power " << "#" << ' ';  
                break;
   }
 }
@@ -127,19 +158,17 @@ void F() {
 
 void U(){
    switch( token ) {
+    case '+' : 
+               casa('+');
+               U();
+               break;
     case '-' : cout << 0 << ' ';
                casa('-');
                U();
                cout <<  "-"  << ' ';
                break;
-
-    case '+' : cout << 0 << ' ';
-               casa('+');
-               U();
-               cout <<  "+"  << ' ';
-               break;
     default:
-      F();
+      POT();
   }
 
 }
@@ -168,15 +197,14 @@ void T() {
 
 void E_Linha(){
   switch( token ) {
-    case '+' : casa( '+' );
-               T();
-               cout << '+' << ' ';
-               E_Linha();
-               break;
-
     case '-' : casa( '-' );
                T();
                cout <<  "-"  << ' ';
+               E_Linha();
+               break;
+    case '+' : casa( '+' );
+               T();
+               cout << '+' << ' ';
                E_Linha();
                break;
 

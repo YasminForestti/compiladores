@@ -28,6 +28,10 @@ P -> FAT^P  print("^")
 FAT -> F!  print("fat #")
      | F
 
+
+
+FAT' -> FAT'| F 
+
 F -> print("lexema @") ID  
      print(lexema)  NUM 
      print(lexema) FLOAT 

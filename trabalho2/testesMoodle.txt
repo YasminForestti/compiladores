@@ -1,27 +1,13 @@
-Failed tests
-Test 8: Fatorial
-Test 9: Exponenciação
-Test 10: Operador unário encadeado
-Test 14: Fatorial inexistente
-Test 15: Exponencial inexistente
-Test 8: Fatorial
-Incorrect program output
 --- Input ---
 a = -8!;
 b = (2 * 2 + 1)!/3!;
 print b! / -a ^ 2;
 
---- Program output ---
-=== Código ===
-a 0 8 - = ^
-=== Console ===
-=== Vars ===
-|a ==> Num: -8|
-=== Pilha ===
 
 --- Expected output (exact text)---
 === Código ===
 a 0 8 fat # - = ^ b 2 2 * 1 + fat # 3 fat # / = ^ b @ fat # 0 a @ 2 power # - / print #
+a 0 8 fat # - = ^ b 2 2 * 1 + fat # 3 fat # / = ^ b @ fat # 0 a @ 2 power # - / print # 
 === Console ===
 Num: -1.49652e+09
 === Vars ===
@@ -47,6 +33,7 @@ a 2 = ^
 --- Expected output (exact text)---
 === Código ===
 a 2 9 0.5 power # power # = ^ b 3.1 a @ a @ 1 3 fat # / power # power # * 1 + = ^ 0 b @ 2 fat # power # - print #
+a 2 9 0.5 power # power # = ^ b 3.1 a @ a @ 1 3 fat # / power # power # * 1 + = ^ 0 b @ 2 fat # power # - print #
 === Console ===
 Num: -3562.25
 === Vars ===
@@ -63,6 +50,7 @@ print +-+---a!;
 --- Program output ---
 === Código ===
 a 0 0 0 4 - 2 - 10 + - - = ^ 0 0 0 0 0 0 a @ - - - + - + print #
+
 === Console ===
 Num: 4
 === Vars ===
@@ -72,6 +60,8 @@ Num: 4
 --- Expected output (exact text)---
 === Código ===
 a 0 0 0 4 - 2 - 10 + - - = ^ 0 0 0 0 a @ fat # - - - - print #
+a 0 0 0 4 - 2 - 10 + - - = ^ 0 0 0 0 a @ fat # - - - - print # 
+=== Console ===
 === Console ===
 Num: 24
 === Vars ===
@@ -94,6 +84,7 @@ b 0 8 - = ^
 --- Expected output (exact text)---
 === Código ===
 b 0 8 - fat # = ^
+b 0 8 - fat # = ^ 
 === Console ===
 === Erro: Fatorial somente está definido para n >= 0 ===
 === Vars ===
@@ -118,6 +109,7 @@ Num: 0
 --- Expected output (exact text)---
 === Código ===
 a 0 = ^ a @ 0 0 fat # - power # print #
+a 0 = ^ a @ 0 0 fat # - power # print # 
 === Console ===
 === Erro: A potência de zero é indefinida para um expoente negativo ===
 === Vars ===
