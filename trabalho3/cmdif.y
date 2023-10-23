@@ -50,7 +50,7 @@ void duplicateVariable(string variable) {
     // cout << "Declarando a variável '" << variable << "' na linha " << linha  << endl;
     int duplicates = VariableDeclaration.count(variable);
     if(duplicates) {
-        cerr << "Erro: a variável '" << variable << "' já foi declarada na linha " << VariableDeclaration[variable]  << endl;
+        cerr << "Erro: a variável '" << variable << "' já foi declarada na linha " << VariableDeclaration[variable] << '.'  << endl;
         exit(1);
     }else{
         VariableDeclaration[variable] = linha;
