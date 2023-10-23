@@ -32,9 +32,30 @@ struct Var {
 };
 
 map<string,Var> ts; // Tabela de Símbolos
+map<string, int> VariableDeclaration;
+
 
 // Dispara um erro se não pode declarar
 void insere_tabela_de_simbolos( TipoDecl, Atributos );
+
+void nonVariable(string variable) {
+    int nonVariable = VariableDeclaration.count(variable); 
+    if(nonVariable == 0) {
+        cerr << "Erro: a variável '" << variable << "' não foi declarada." << endl;
+        exit(1);
+    }
+}
+
+void duplicateVariable(string variable) {
+    // cout << "Declarando a variável '" << variable << "' na linha " << linha  << endl;
+    int duplicates = VariableDeclaration.count(variable);
+    if(duplicates) {
+        cerr << "Erro: a variável '" << variable << "' já foi declarada na linha " << VariableDeclaration[variable]  << endl;
+        exit(1);
+    }else{
+        VariableDeclaration[variable] = linha;
+    }
+}
 
 vector<string> concatena( vector<string> a, vector<string> b ) {
   a.insert( a.end(), b.begin(), b.end() );
@@ -125,32 +146,38 @@ CMD_IF : IF '(' E ')' CMD ELSE CMD
          }
        ;
 
-DECL_LET : LET VARs { $$.c = $2.c; }
+DECL_LET : LET VARs {  $$.c = $2.c;   duplicateVariable($2.c[0]);}
          ;
 
-SIMPLE_DECL : VARs { $$.c = $1.c; }
+SIMPLE_DECL : VARs { $$.c = $1.c;   nonVariable($1.c[0]);}
             ;
 
-VARs : VAR ',' VARs        { $$.c = $1.c + $3.c; }
-     | VAR '=' VARs        { $$.c = $1.c + $3.c; }
-     | VAR MAIS_IGUAL VARs { $$.c = $1.c + $3.c; }
-     | VAR
+VARs : VAR ',' VARs        { duplicateVariable($3.c[0]); $$.c = $1.c + $3.c; }
+     | VAR '=' VARs        { nonVariable($3.c[0]);$$.c = $1.c + $3.c; }
+     | VAR MAIS_IGUAL VARs { nonVariable($1.c[0]);$$.c = $1.c + $3.c; }
+     | VAR                 
      | E
      ;
 
-VAR : ID {$$.c = $1.c + "&";}
+VAR : ID {  
+            $$.c = $1.c + "&";
+          }
     | ID '=' CDOUBLE
-      { $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
+      {
+        $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
     | ID '=' CINT
-      { $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
+      { 
+        $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";
+       }
     | ID '=' CSTRING
       { $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
     | ID '=' OBJ
-      { $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
+      { 
+        $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
     | ID '=' ARRAY
       { $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
     | ID '=' ID
-      { $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
+      {  $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";}
     ;
 
 E : E '<' E

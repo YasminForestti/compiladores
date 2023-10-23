@@ -6,7 +6,9 @@
 int token( int tk );
 %}
 
-STRING    \"([^"]|\\\"|\"\")+\" 
+STRINGDUPLA    \"([^"]|\\\"|\"\")+\"
+STRINGSIMPLES    \'([^']|\\\'|\'\')+\'
+STRING       {STRINGDUPLA}|{STRINGSIMPLES}
 D  	    [0-9]
 L   	    [A-Za-z_]
 INT	    {D}+

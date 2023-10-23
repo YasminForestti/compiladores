@@ -102,9 +102,30 @@ struct Var {
 };
 
 map<string,Var> ts; // Tabela de Símbolos
+map<string, int> VariableDeclaration;
+
 
 // Dispara um erro se não pode declarar
 void insere_tabela_de_simbolos( TipoDecl, Atributos );
+
+void nonVariable(string variable) {
+    int nonVariable = VariableDeclaration.count(variable); 
+    if(nonVariable == 0) {
+        cerr << "Erro: a variável '" << variable << "' não foi declarada." << endl;
+        exit(1);
+    }
+}
+
+void duplicateVariable(string variable) {
+    // cout << "Declarando a variável '" << variable << "' na linha " << linha  << endl;
+    int duplicates = VariableDeclaration.count(variable);
+    if(duplicates) {
+        cerr << "Erro: a variável '" << variable << "' já foi declarada na linha " << VariableDeclaration[variable]  << endl;
+        exit(1);
+    }else{
+        VariableDeclaration[variable] = linha;
+    }
+}
 
 vector<string> concatena( vector<string> a, vector<string> b ) {
   a.insert( a.end(), b.begin(), b.end() );
@@ -153,7 +174,7 @@ void print( vector<string> codigo ) {
 }
 
 
-#line 157 "y.tab.c"
+#line 178 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -687,10 +708,10 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    99,    99,   102,   103,   106,   107,   108,   110,   113,
-     128,   131,   134,   135,   136,   137,   138,   141,   142,   144,
-     146,   148,   150,   152,   156,   158,   160,   162,   164,   166,
-     168,   169,   170,   171,   172,   173,   174
+       0,   120,   120,   123,   124,   127,   128,   129,   131,   134,
+     149,   152,   155,   156,   157,   158,   159,   162,   165,   168,
+     172,   174,   177,   179,   183,   185,   187,   189,   191,   193,
+     195,   196,   197,   198,   199,   200,   201
 };
 #endif
 
@@ -1295,25 +1316,25 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* S: CMDs  */
-#line 99 "cmdif.y"
+#line 120 "cmdif.y"
          { print( resolve_enderecos( yyvsp[0].c  + ".") ); }
-#line 1301 "y.tab.c"
+#line 1322 "y.tab.c"
     break;
 
   case 3: /* CMDs: CMDs CMD  */
-#line 102 "cmdif.y"
+#line 123 "cmdif.y"
                 {yyval.c = yyvsp[-1].c + yyvsp[0].c;}
-#line 1307 "y.tab.c"
+#line 1328 "y.tab.c"
     break;
 
   case 7: /* CMD: PRINT E ';'  */
-#line 109 "cmdif.y"
+#line 130 "cmdif.y"
       { yyval.c = yyvsp[-1].c + "println" + "#"; }
-#line 1313 "y.tab.c"
+#line 1334 "y.tab.c"
     break;
 
   case 9: /* CMD_IF: IF '(' E ')' CMD ELSE CMD  */
-#line 114 "cmdif.y"
+#line 135 "cmdif.y"
         {  string lbl_true = gera_label( "lbl_true" );
            string lbl_fim_if = gera_label( "lbl_fim_if" );
            string definicao_lbl_true = ":" + lbl_true;
@@ -1326,125 +1347,131 @@ yyreduce:
                    definicao_lbl_fim_if         // Fim do IF
                    ;
          }
-#line 1330 "y.tab.c"
+#line 1351 "y.tab.c"
     break;
 
   case 10: /* DECL_LET: LET VARs  */
-#line 128 "cmdif.y"
-                    { yyval.c = yyvsp[0].c; }
-#line 1336 "y.tab.c"
+#line 149 "cmdif.y"
+                    {  yyval.c = yyvsp[0].c;   duplicateVariable(yyvsp[0].c[0]);}
+#line 1357 "y.tab.c"
     break;
 
   case 11: /* SIMPLE_DECL: VARs  */
-#line 131 "cmdif.y"
-                   { yyval.c = yyvsp[0].c; }
-#line 1342 "y.tab.c"
+#line 152 "cmdif.y"
+                   { yyval.c = yyvsp[0].c;   nonVariable(yyvsp[0].c[0]);}
+#line 1363 "y.tab.c"
     break;
 
   case 12: /* VARs: VAR ',' VARs  */
-#line 134 "cmdif.y"
-                           { yyval.c = yyvsp[-2].c + yyvsp[0].c; }
-#line 1348 "y.tab.c"
+#line 155 "cmdif.y"
+                           { duplicateVariable(yyvsp[0].c[0]); yyval.c = yyvsp[-2].c + yyvsp[0].c; }
+#line 1369 "y.tab.c"
     break;
 
   case 13: /* VARs: VAR '=' VARs  */
-#line 135 "cmdif.y"
-                           { yyval.c = yyvsp[-2].c + yyvsp[0].c; }
-#line 1354 "y.tab.c"
+#line 156 "cmdif.y"
+                           { nonVariable(yyvsp[0].c[0]);yyval.c = yyvsp[-2].c + yyvsp[0].c; }
+#line 1375 "y.tab.c"
     break;
 
   case 14: /* VARs: VAR MAIS_IGUAL VARs  */
-#line 136 "cmdif.y"
-                           { yyval.c = yyvsp[-2].c + yyvsp[0].c; }
-#line 1360 "y.tab.c"
+#line 157 "cmdif.y"
+                           { nonVariable(yyvsp[-2].c[0]);yyval.c = yyvsp[-2].c + yyvsp[0].c; }
+#line 1381 "y.tab.c"
     break;
 
   case 17: /* VAR: ID  */
-#line 141 "cmdif.y"
-         {yyval.c = yyvsp[0].c + "&";}
-#line 1366 "y.tab.c"
+#line 162 "cmdif.y"
+         {  
+            yyval.c = yyvsp[0].c + "&";
+          }
+#line 1389 "y.tab.c"
     break;
 
   case 18: /* VAR: ID '=' CDOUBLE  */
-#line 143 "cmdif.y"
-      { yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
-#line 1372 "y.tab.c"
-    break;
-
-  case 19: /* VAR: ID '=' CINT  */
-#line 145 "cmdif.y"
-      { yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
-#line 1378 "y.tab.c"
-    break;
-
-  case 20: /* VAR: ID '=' CSTRING  */
-#line 147 "cmdif.y"
-      { yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
-#line 1384 "y.tab.c"
-    break;
-
-  case 21: /* VAR: ID '=' OBJ  */
-#line 149 "cmdif.y"
-      { yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
-#line 1390 "y.tab.c"
-    break;
-
-  case 22: /* VAR: ID '=' ARRAY  */
-#line 151 "cmdif.y"
-      { yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
+#line 166 "cmdif.y"
+      {
+        yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
 #line 1396 "y.tab.c"
     break;
 
-  case 23: /* VAR: ID '=' ID  */
-#line 153 "cmdif.y"
+  case 19: /* VAR: ID '=' CINT  */
+#line 169 "cmdif.y"
+      { 
+        yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";
+       }
+#line 1404 "y.tab.c"
+    break;
+
+  case 20: /* VAR: ID '=' CSTRING  */
+#line 173 "cmdif.y"
       { yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
-#line 1402 "y.tab.c"
+#line 1410 "y.tab.c"
+    break;
+
+  case 21: /* VAR: ID '=' OBJ  */
+#line 175 "cmdif.y"
+      { 
+        yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
+#line 1417 "y.tab.c"
+    break;
+
+  case 22: /* VAR: ID '=' ARRAY  */
+#line 178 "cmdif.y"
+      { yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
+#line 1423 "y.tab.c"
+    break;
+
+  case 23: /* VAR: ID '=' ID  */
+#line 180 "cmdif.y"
+      {  yyval.c = yyvsp[-2].c + "&" + yyvsp[-2].c + yyvsp[0].c + "=" + "^";}
+#line 1429 "y.tab.c"
     break;
 
   case 24: /* E: E '<' E  */
-#line 157 "cmdif.y"
+#line 184 "cmdif.y"
     { yyval.c = yyvsp[-2].c + yyvsp[0].c + yyvsp[-1].c;}
-#line 1408 "y.tab.c"
+#line 1435 "y.tab.c"
     break;
 
   case 25: /* E: E '>' E  */
-#line 159 "cmdif.y"
+#line 186 "cmdif.y"
     { yyval.c = yyvsp[-2].c + yyvsp[0].c + yyvsp[-1].c;}
-#line 1414 "y.tab.c"
+#line 1441 "y.tab.c"
     break;
 
   case 26: /* E: E '+' E  */
-#line 161 "cmdif.y"
+#line 188 "cmdif.y"
     { yyval.c = yyvsp[-2].c + yyvsp[0].c + "+";}
-#line 1420 "y.tab.c"
+#line 1447 "y.tab.c"
     break;
 
   case 27: /* E: E '-' E  */
-#line 163 "cmdif.y"
+#line 190 "cmdif.y"
     { yyval.c = yyvsp[-2].c + yyvsp[0].c + "-";}
-#line 1426 "y.tab.c"
+#line 1453 "y.tab.c"
     break;
 
   case 28: /* E: E '*' E  */
-#line 165 "cmdif.y"
+#line 192 "cmdif.y"
     { yyval.c = yyvsp[-2].c + yyvsp[0].c + "*";}
-#line 1432 "y.tab.c"
+#line 1459 "y.tab.c"
     break;
 
   case 29: /* E: E '/' E  */
-#line 167 "cmdif.y"
+#line 194 "cmdif.y"
     { yyval.c = yyvsp[-2].c + yyvsp[0].c + "/";}
-#line 1438 "y.tab.c"
+#line 1465 "y.tab.c"
     break;
 
   case 30: /* E: '(' E ')'  */
-#line 168 "cmdif.y"
+#line 195 "cmdif.y"
               { yyval.c = yyvsp[-1].c; }
-#line 1444 "y.tab.c"
+#line 1471 "y.tab.c"
     break;
 
 
-#line 1448 "y.tab.c"
+#line 1475 "y.tab.c"
 
       default: break;
     }
@@ -1637,7 +1664,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 177 "cmdif.y"
+#line 204 "cmdif.y"
 
 
 #include "lex.yy.c"
