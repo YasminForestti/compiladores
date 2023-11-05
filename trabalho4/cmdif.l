@@ -32,6 +32,8 @@ ID          {L}({L}|{D})*
 "+="       { return token( MAIS_IGUAL ); }
 "++"       { return token( MAIS_MAIS ); }
 "let"      { return token( LET ); }
+"var"      { return token( VAR ); }
+"const"      { return token( CONST ); }
 "if"       { return token( IF ); }
 "else"     { return token( ELSE ); }
 "print"    { return token( PRINT ); }

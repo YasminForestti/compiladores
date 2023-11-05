@@ -5,7 +5,7 @@
 #include <map>
 
 using namespace std;
-int linha = 1, coluna = 1; 
+int linha = 1, coluna = 0; 
 
 struct Atributos {
   vector<string> c; // Código
@@ -25,38 +25,46 @@ extern "C" int yylex();
 int yyparse();
 void yyerror(const char *);
 
-enum TipoDecl { DeclVar, DeclConst, DeclLet };
+enum TipoDecl { Let = 1, Const, Var };
 
 struct Var {
   int linha, coluna;
   TipoDecl tipo;
 };
+struct Simbolo {
+  TipoDecl tipo;
+  int linha;
+  int coluna;
+};
+map< string, Simbolo > ts;
 
-map<string,Var> ts; 
 
-void nonVariable(Atributos var) {
-    string variable = var.c[0];
-    int nonVariable = ts.count(variable); 
-    if(nonVariable == 0) {
-        cerr << "Erro: a variável '" << variable << "' não foi declarada." << endl;
-        exit(1);
+void nonVariable(string nome, bool modificavel) {
+  if( ts.count( nome ) > 0 ) {
+    if( modificavel && ts[nome].tipo == Const ) {
+      cerr << "Erro: a variável '" << nome << "' não pode ser modificada." << endl;
+      exit( 1 );     
     }
+  }
+  else {
+    cerr << "Erro: a variável '" << nome << "' não foi declarada." << endl;
+    exit( 1 );     
+  }
 }
 
-void duplicateVariable( TipoDecl decl, Atributos var) {
-    // cout << "Declarando a variável '" << var.c[0] << "' na linha " <<  var.linha << endl;
-    Var VarAtribuicao;
-    VarAtribuicao.linha = var.linha;
-    VarAtribuicao.coluna = var.coluna;
-    VarAtribuicao.tipo = decl;   
-    string variable = var.c[0];
-    int duplicates = ts.count(variable);
-    if(duplicates != 0) {
-        cerr << "Erro: a variável '" << variable << "' ja foi declarada na linha " << ts[variable].linha << '.'  << endl;
-        exit(1);
-    }else{
-        ts[variable] = VarAtribuicao;
-    }
+vector<string> duplicateVariable( TipoDecl tipo, string nome, int linha, int coluna) {
+  if( ts.count( nome ) == 0 ) {
+    ts[nome] = Simbolo{ tipo, linha, coluna };
+    return vector<string>{ nome, "&" };
+  }
+  else if( tipo == Var && ts[nome].tipo == Var ) {
+    ts[nome] = Simbolo{ tipo, linha, coluna };
+    return vector<string>{};
+  } 
+  else {
+    cerr << "Erro: a variável '" << nome << "' ja foi declarada na linha " << ts[nome].linha << "." <<endl;
+    exit( 1 );     
+  }
 }
 
 vector<string> concatena( vector<string> a, vector<string> b ) {
@@ -106,13 +114,13 @@ void print( vector<string> codigo ) {
 }
 %}
 
-%token ID IF ELSE LET PRINT FOR WHILE
-%token CDOUBLE CSTRING CINT OBJ ARRAY
+%token ID IF ELSE PRINT FOR WHILE
+%token CDOUBLE CSTRING CINT OBJ ARRAY VAR LET CONST
 %token AND OR ME_IG MA_IG DIF IGUAL
 %token MAIS_IGUAL MAIS_MAIS
 
 %right '='
-%nonassoc IGUAL MAIS_IGUAL MAIS_MAIS 
+%nonassoc IGUAL MAIS_IGUAL MAIS_MAIS MA_IG ME_IG DIF
 %nonassoc '<' '>' IF ELSE
 %left AND OR
 %left '+' '-'
@@ -126,7 +134,7 @@ S : CMDs { print( resolve_enderecos( $1.c + "." ) ); }
   ;
 
 CMDs : CMDs CMD  { $$.c = $1.c + $2.c; };
-     | CMD
+     |  {$$.clear();}
      ;
      
 CMD : CMD_LET ';'
@@ -176,24 +184,49 @@ CMD_FOR : FOR '(' PRIM_E ';' E ';' E ')' CMD
 
 PRIM_E : CMD_LET 
        | E  
-         { $$.c = $1.c + "^"; }
+        { $$.c = $1.c + "^"; }
        ;
 
-CMD_LET : LET VARs { $$.c = $2.c;}
+CMD_LET : LET LET_VARs { $$.c = $2.c; }
         ;
 
-VARs : VAR ',' VARs { $$.c = $1.c + $3.c;} 
-     | VAR
-     ;
+LET_VARs : LET_VAR ',' LET_VARs { $$.c = $1.c + $3.c; } 
+         | LET_VAR
+         ;
 
-VAR : ID  
-      { $$.c = $1.c + "&"; duplicateVariable(DeclLet,$1);}
-    | ID '=' E
-      { $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^"; duplicateVariable(DeclLet,$1);}
-      | ID '=' '{' '}'    
-      { $$.c = $1.c + "&" +  $1.c +  vector<string>{"{}"} + "=" + "^"; duplicateVariable( DeclLet, $1 );} 
-    ;
-     
+LET_VAR : ID  
+          { $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ); }
+        | ID '=' E
+          { 
+            $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ) + 
+                   $1.c + $3.c + "=" + "^"; }
+        ;
+
+CMD_VAR : VAR VAR_VARs { $$.c = $2.c; }
+        ;
+        
+VAR_VARs : VAR_VAR ',' VAR_VARs { $$.c = $1.c + $3.c; } 
+         | VAR_VAR
+         ;
+
+VAR_VAR : ID  
+          { $$.c = duplicateVariable( Var, $1.c[0], $1.linha, $1.coluna ); }
+        | ID '=' E
+          {  $$.c = duplicateVariable( Var, $1.c[0], $1.linha, $1.coluna ) + 
+                    $1.c + $3.c + "=" + "^"; }
+        ;
+  
+CMD_CONST: CONST CONST_VARs { $$.c = $2.c; }
+         ;
+  
+CONST_VARs : CONST_VAR ',' CONST_VARs { $$.c = $1.c + $3.c; } 
+           | CONST_VAR
+           ;
+
+CONST_VAR : ID '=' E
+            { $$.c = duplicateVariable( Const, $1.c[0], $1.linha, $1.coluna ) + 
+                     $1.c + $3.c + "=" + "^"; }
+          ;
 CMD_IF : IF '(' E ')' CMD
         {   string lbl_fim_if = gera_label( "lbl_fim_if" );
           $$.c = $3.c + "!" + lbl_fim_if + "?" +
@@ -222,17 +255,17 @@ LVALUEPROP : E '[' E ']' { $$.c = $1.c + $3.c;}
            ;
 
 E : LVALUE '=' E 
-    { $$.c = $1.c + $3.c + "="; nonVariable($1);}
+    { $$.c = $1.c + $3.c + "="; nonVariable( $1.c[0], true );}
     | LVALUEPROP '=' E 	
-    {nonVariable($1); $$.c = $1.c + $3.c + "[=]"; }
+    {nonVariable( $1.c[0], true ); $$.c = $1.c + $3.c + "[=]"; }
     | LVALUE '=' '{' '}'        
-    {nonVariable($1); $$.c = $1.c + vector<string>{"{}"} + "="; } 
+    {nonVariable( $1.c[0], true ); $$.c = $1.c + vector<string>{"{}"} + "="; } 
     | LVALUEPROP '=' '{' '}'    
-    {nonVariable($1); $$.c = $1.c + vector<string>{"{}"} + "[=]"; }
+    {nonVariable( $1.c[0], true ); $$.c = $1.c + vector<string>{"{}"} + "[=]"; }
     | LVALUE MAIS_IGUAL E     
-    {nonVariable($1); $$.c = $1.c + $1.c + "@" + $3.c + "+" + "="; }  
+    {nonVariable( $1.c[0], true ); $$.c = $1.c + $1.c + "@" + $3.c + "+" + "="; }  
     | LVALUEPROP MAIS_IGUAL E
-    {nonVariable($1); $$.c = $1.c + $1.c + "[@]" + $3.c + "+" + "[=]"; }
+    {nonVariable( $1.c[0], true ); $$.c = $1.c + $1.c + "[@]" + $3.c + "+" + "[=]"; }
     | LVALUE MAIS_MAIS 
     { $$.c = $1.c + "@" +  $1.c + $1.c + "@" + "1" + "+" + "=" + "^"; }
     | E IGUAL E   
@@ -263,9 +296,9 @@ E : LVALUE '=' E
     | CINT   
     | OBJ
     | LVALUE 
-    {  nonVariable( $1); $$.c = $1.c + "@"; } 
+    {  nonVariable( $1.c[0], false ); $$.c = $1.c + "@"; } 
     | LVALUEPROP
-    { $$.c = $1.c + "[@]"; }
+    {  nonVariable( $1.c[0], false );$$.c = $1.c + "[@]"; }
     ;
 
   
