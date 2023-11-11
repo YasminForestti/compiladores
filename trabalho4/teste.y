@@ -50,15 +50,9 @@ struct Simbolo {
   int coluna;
 };
 
-int in_func = 0;
-
-// Tabela de símbolos - agora é uma pilha
 vector< map< string, Simbolo > > ts = { map< string, Simbolo >{} }; 
 vector<string> funcoes;
 
-extern "C" int yylex();
-int yyparse();
-void yyerror(const char *);
 
 vector<string> tokeniza(string asmLine){
 	vector<string> instructions;
@@ -162,9 +156,9 @@ void print( vector<string> codigo ) {
 
 %}
 
-%token ID IF ELSE PRINT FOR WHILE FUNCTION RETURN
-%token CDOUBLE CSTRING CINT OBJ ARRAY VAR LET CONST
-%token AND OR ME_IG MA_IG DIF IGUAL ASM
+%token IF ELSE FOR WHILE LET CONST VAR OBJ ARRAY FUNCTION ASM RETURN
+%token ID CDOUBLE CSTRING CINT BOOL
+%token AND OR ME_IG MA_IG DIF IGUAL
 %token MAIS_IGUAL MAIS_MAIS
 
 %right '='
@@ -173,7 +167,7 @@ void print( vector<string> codigo ) {
 %left AND OR
 %left '+' '-'
 %left '*' '/' '%'
-%left '['
+%right '[' '(' '{'
 %left '.'
 
 %%
@@ -188,22 +182,21 @@ CMDs : CMDs CMD  { $$.c = $1.c + $2.c; };
 CMD : CMD_LET ';'
     | CMD_VAR ';'
     | CMD_CONST ';'
-    | CMD_FUNCTION 
-    | E ASM 
-      { $$.c = $1.c + $2.c + "^"; }
-    | CMD_IF
-    | PRINT E ';' 
-      { $$.c = $2.c + "println" + "#"; }
     | CMD_FOR
+    | CMD_IF
     | CMD_WHILE
-    |'{' CMDs '}' 
-      { $$.c = $2.c; }
-    | E ';'
-     {$$.c = $1.c + "^";}
-    | ';' 
-      {$$.clear();}
+    | CMD_FUNCTION
     | RETURN E ';'
       { $$.c = $2.c + "'&retorno'" + "@" + "~"; }
+    | E ASM 
+      { $$.c = $1.c + $2.c + "^"; }
+    | '{' EMPILHA_TS CMDs '}'
+      { ts.pop_back();
+        $$.c = vector<string>{"<{"} + $3.c + vector<string>{"}>"}; }
+    | E ';'
+      {$$.c = $1.c + "^";}
+    | ';' 
+      {$$.clear();}
     ;
 
 EMPILHA_TS : { ts.push_back( map< string, Simbolo >{} ); } 
@@ -244,9 +237,7 @@ LISTA_PARAMs : PARAMs
            ;
            
 PARAMs : PARAMs ',' PARAM  
-       { // a & a arguments @ 0 [@] = ^ 
-         $$.c = $1.c + $3.c + "&" + $3.c + "arguments" + "@" + to_string( $1.contador )
-                + "[@]" + "=" + "^"; 
+       { $$.c = $1.c + $3.c + "&" + $3.c + "arguments" + "@" + to_string( $1.contador ) + "[@]" + "=" + "^"; 
          is_function_scope = true; 
          if( $3.valor_default.size() > 0 ) {
            // Gerar código para testar valor default.
@@ -295,51 +286,6 @@ CMD_FOR : FOR '(' PRIM_E ';' E ';' E ')' CMD
         }
         ;
 
-PRIM_E : CMD_LET 
-       | E  
-        { $$.c = $1.c + "^"; }
-       ;
-
-CMD_LET : LET LET_VARs { $$.c = $2.c; }
-        ;
-
-LET_VARs : LET_VAR ',' LET_VARs { $$.c = $1.c + $3.c; } 
-         | LET_VAR
-         ;
-
-LET_VAR : ID  
-          { $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ); }
-        | ID '=' E
-          { 
-            $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ) + 
-                   $1.c + $3.c + "=" + "^"; }
-        ;
-
-CMD_VAR : VAR VAR_VARs { $$.c = $2.c; }
-        ;
-        
-VAR_VARs : VAR_VAR ',' VAR_VARs { $$.c = $1.c + $3.c; } 
-         | VAR_VAR
-         ;
-
-VAR_VAR : ID  
-          { $$.c = duplicateVariable( Var, $1.c[0], $1.linha, $1.coluna ); }
-        | ID '=' E
-          {  $$.c = duplicateVariable( Var, $1.c[0], $1.linha, $1.coluna ) + 
-                    $1.c + $3.c + "=" + "^"; }
-        ;
-  
-CMD_CONST: CONST CONST_VARs { $$.c = $2.c; }
-         ;
-  
-CONST_VARs : CONST_VAR ',' CONST_VARs { $$.c = $1.c + $3.c; } 
-           | CONST_VAR
-           ;
-
-CONST_VAR : ID '=' E
-            { $$.c = duplicateVariable( Const, $1.c[0], $1.linha, $1.coluna ) + 
-                     $1.c + $3.c + "=" + "^"; }
-          ;
 CMD_IF : IF '(' E ')' CMD
         {   string lbl_fim_if = gera_label( "lbl_fim_if" );
           $$.c = $3.c + "!" + lbl_fim_if + "?" +
@@ -360,16 +306,58 @@ CMD_IF : IF '(' E ')' CMD
          }
        ;
 
+PRIM_E : CMD_LET 
+       | CMD_VAR
+       | CMD_CONST
+       | E  
+        { $$.c = $1.c + "^"; }
+       ;
+
+CMD_LET : LET LET_VARs { $$.c = $2.c; }
+        ;
+
+LET_VARs : LET_VAR ',' LET_VARs { $$.c = $1.c + $3.c; } 
+         | LET_VAR
+         ;
+
+LET_VAR : ID  
+          { $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ); }
+        | ID '=' E
+          { $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ) +  $1.c + $3.c + "=" + "^"; }
+        ;
+
+CMD_VAR : VAR VAR_VARs { $$.c = $2.c; }
+        ;
+        
+VAR_VARs : VAR_VAR ',' VAR_VARs { $$.c = $1.c + $3.c; } 
+         | VAR_VAR
+         ;
+
+VAR_VAR : ID  
+          { $$.c = duplicateVariable( Var, $1.c[0], $1.linha, $1.coluna ); }
+        | ID '=' E
+          {  $$.c = duplicateVariable( Var, $1.c[0], $1.linha, $1.coluna ) + $1.c + $3.c + "=" + "^"; }
+        ;
+  
+CMD_CONST: CONST CONST_VARs { $$.c = $2.c; }
+         ;
+  
+CONST_VARs : CONST_VAR ',' CONST_VARs { $$.c = $1.c + $3.c; } 
+           | CONST_VAR
+           ;
+
+CONST_VAR : ID '=' E
+            { $$.c = duplicateVariable( Const, $1.c[0], $1.linha, $1.coluna ) + $1.c + $3.c + "=" + "^"; }
+          ;
+
 LISTA_ARGs : ARGs
            | { $$.clear(); }
            ;
 
 ARGs : ARGs ',' E
-       { $$.c = $1.c + $3.c;
-         $$.contador++; }
+       { $$.c = $1.c + $3.c; $$.contador++; }
      | E
-       { $$.c = $1.c;
-         $$.contador++; }
+       { $$.c = $1.c; $$.contador++; }
      ;   
 
 LVALUE : ID 
@@ -422,13 +410,13 @@ E : LVALUE '=' E
     | OBJ  {$$.c = vector<string>{"{}"};}
     | LVALUE 
     { if(!is_function_scope) nonVariable( $1.c[0], false ); $$.c = $1.c + "@";}  
-  | LVALUEPROP
+    | LVALUEPROP
     { if(!is_function_scope) nonVariable( $1.c[0], false ); $$.c = $1.c + "[@]"; }
     | E '(' LISTA_ARGs ')'
     {$$.c = $3.c + to_string( $3.contador ) + $1.c + "$";}
     | '[' ']'             
     {$$.c = vector<string>{"[]"};}
-  | '{' '}'
+    | '{' '}'
     {$$.c = vector<string>{"{}"};}
     ;
 

@@ -10,6 +10,7 @@ L   	    [A-Za-z_]
 INT	    {D}+
 DOUBLE      {D}+"."{D}+([Ee][+\-]?{D}+)?
 ID          {L}({L}|{D})*
+BOOL      true|false
 %%
 
 "\t"       { coluna += 4; }
@@ -39,7 +40,7 @@ ID          {L}({L}|{D})*
                 yylval.c = tokeniza( lexema );
                 coluna += strlen( yytext ); 
                 return ASM;}
-
+{BOOL}     {return token( BOOL );} 
 {INT}      { return token( CINT ); } 
 {DOUBLE}   { return token( CDOUBLE ); }
 {STRING}   { return token( CSTRING );}
