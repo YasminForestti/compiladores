@@ -1,8 +1,4 @@
 %{
-#include <iostream>
-#include <string>
-#include <vector>
-#include <map>
 int token( int tk );
 %}
 
@@ -14,7 +10,6 @@ L   	    [A-Za-z_]
 INT	    {D}+
 DOUBLE      {D}+"."{D}+([Ee][+\-]?{D}+)?
 ID          {L}({L}|{D})*
-
 %%
 
 "\t"       { coluna += 4; }
@@ -36,9 +31,15 @@ ID          {L}({L}|{D})*
 "const"      { return token( CONST ); }
 "if"       { return token( IF ); }
 "else"     { return token( ELSE ); }
-"print"    { return token( PRINT ); }
 "while"    { return token( WHILE ); }
 "for"     { return token( FOR );}
+"return"    { return token( RETURN );}
+"function"  { return token( FUNCTION );}
+"asm{".*"}"  {string lexema = trim( yytext + 3, "{}" ); 
+                yylval.c = tokeniza( lexema );
+                coluna += strlen( yytext ); 
+                return ASM;}
+
 {INT}      { return token( CINT ); } 
 {DOUBLE}   { return token( CDOUBLE ); }
 {STRING}   { return token( CSTRING );}

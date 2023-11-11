@@ -1,1 +1,1 @@
-obj & obj {} = ^ i & i 0 2 - = ^ obj @ nome "Manoel" [=] ^ obj @ nums [] [=] ^ obj @ nums [@] 0 12 [=] ^ obj @ nums [@] 3 12 [=] ^ obj @ nums [@] 3 obj @ nums [@] 3 [@] 1 + [=] ^ obj @ nums [@] i @ i i @ 1 + = ^ 3 + 45 [=] ^ obj @ 'nom' 'e' + obj @ nome [@] "!" + [=] ^ . 
+log & log {} = '&funcao' 20 [=] ^ r & r 'Hello, world!' 1 log @ $ = ^ . msg & msg arguments @ 0 [@] = ^ msg @ println # undefined ^ undefined @ '&retorno' @ ~ 

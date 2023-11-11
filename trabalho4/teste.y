@@ -1,21 +1,28 @@
 %{
-#include <iostream>
 #include <string>
+#include <stdio.h>
+#include <stdlib.h>
+#include <algorithm>
+#include <iostream>
 #include <vector>
 #include <map>
 
 using namespace std;
 int linha = 1, coluna = 0; 
+bool is_function_scope = false;
 
 struct Atributos {
   vector<string> c; // Código
+  int contador = 0;         
+  vector<string> valor_default; 
 
   int linha = 0, coluna = 0;
-
   void clear() {
     c.clear();
+    valor_default.clear();
     linha = 0;
     coluna = 0;
+    contador = 0;
   }
 };
 
@@ -27,6 +34,12 @@ void yyerror(const char *);
 
 enum TipoDecl { Let = 1, Const, Var };
 
+map< int, string > nomeTipoDecl = { 
+  { Let, "let" }, 
+  { Const, "const" }, 
+  { Var, "var" }
+};
+
 struct Var {
   int linha, coluna;
   TipoDecl tipo;
@@ -36,33 +49,67 @@ struct Simbolo {
   int linha;
   int coluna;
 };
-map< string, Simbolo > ts;
 
+int in_func = 0;
 
-void nonVariable(string nome, bool modificavel) {
-  if( ts.count( nome ) > 0 ) {
-    if( modificavel && ts[nome].tipo == Const ) {
-      cerr << "Erro: a variável '" << nome << "' não pode ser modificada." << endl;
-      exit( 1 );     
-    }
-  }
-  else {
-    cerr << "Erro: a variável '" << nome << "' não foi declarada." << endl;
-    exit( 1 );     
-  }
+// Tabela de símbolos - agora é uma pilha
+vector< map< string, Simbolo > > ts = { map< string, Simbolo >{} }; 
+vector<string> funcoes;
+
+extern "C" int yylex();
+int yyparse();
+void yyerror(const char *);
+
+vector<string> tokeniza(string asmLine){
+	vector<string> instructions;
+	string word = "";
+	for(auto c : asmLine){
+		if(c != ' ')
+			word = word + c;
+		else {
+			instructions.push_back(word);
+			word = "";
+		}
+	}
+	instructions.push_back(word);
+	return instructions;
 }
 
+string trim(string str, string charsToRemove){
+	for(auto c : charsToRemove){
+		str.erase(remove(str.begin(), str.end(), c), str.end());
+	}
+	return str;
+}
+
+void nonVariable(string nome, bool modificavel) {
+  for( int i = ts.size() - 1; i >= 0; i-- ) {  
+    auto& atual = ts[i];
+
+    if( atual.count( nome ) > 0 ) {
+      if( modificavel && atual[nome].tipo == Const ) {
+        cerr << "Variavel '" << nome << "' não pode ser modificada." << endl;
+        exit( 1 );     
+      }
+      else {
+        return;
+      }
+    }
+}}
+
 vector<string> duplicateVariable( TipoDecl tipo, string nome, int linha, int coluna) {
-  if( ts.count( nome ) == 0 ) {
-    ts[nome] = Simbolo{ tipo, linha, coluna };
+  auto& topo = ts.back();    
+       
+  if( topo.count( nome ) == 0 ) {
+    topo[nome] = Simbolo{ tipo, linha, coluna };
     return vector<string>{ nome, "&" };
   }
-  else if( tipo == Var && ts[nome].tipo == Var ) {
-    ts[nome] = Simbolo{ tipo, linha, coluna };
+  else if( tipo == Var && topo[nome].tipo == Var ) {
+    topo[nome] = Simbolo{ tipo, linha, coluna };
     return vector<string>{};
   } 
   else {
-    cerr << "Erro: a variável '" << nome << "' ja foi declarada na linha " << ts[nome].linha << "." <<endl;
+    cerr << "Erro: a variável '" << nome << "' já foi declarada na linha " << topo[nome].linha << "." <<endl;
     exit( 1 );     
   }
 }
@@ -112,11 +159,12 @@ void print( vector<string> codigo ) {
     
   cout << endl;  
 }
+
 %}
 
-%token ID IF ELSE PRINT FOR WHILE
+%token ID IF ELSE PRINT FOR WHILE FUNCTION RETURN
 %token CDOUBLE CSTRING CINT OBJ ARRAY VAR LET CONST
-%token AND OR ME_IG MA_IG DIF IGUAL
+%token AND OR ME_IG MA_IG DIF IGUAL ASM
 %token MAIS_IGUAL MAIS_MAIS
 
 %right '='
@@ -130,7 +178,7 @@ void print( vector<string> codigo ) {
 
 %%
 
-S : CMDs { print( resolve_enderecos( $1.c + "." ) ); }
+S : CMDs { print( resolve_enderecos( $1.c + "." + funcoes ) ); }
   ;
 
 CMDs : CMDs CMD  { $$.c = $1.c + $2.c; };
@@ -138,6 +186,11 @@ CMDs : CMDs CMD  { $$.c = $1.c + $2.c; };
      ;
      
 CMD : CMD_LET ';'
+    | CMD_VAR ';'
+    | CMD_CONST ';'
+    | CMD_FUNCTION 
+    | E ASM 
+      { $$.c = $1.c + $2.c + "^"; }
     | CMD_IF
     | PRINT E ';' 
       { $$.c = $2.c + "println" + "#"; }
@@ -149,7 +202,12 @@ CMD : CMD_LET ';'
      {$$.c = $1.c + "^";}
     | ';' 
       {$$.clear();}
+    | RETURN E ';'
+      { $$.c = $2.c + "'&retorno'" + "@" + "~"; }
     ;
+
+EMPILHA_TS : { ts.push_back( map< string, Simbolo >{} ); } 
+           ;
 
 CMD_WHILE : WHILE '(' E ')' CMD {
     string lbl_fim_while = gera_label( "fim_while" );
@@ -165,6 +223,61 @@ CMD_WHILE : WHILE '(' E ')' CMD {
             definicao_lbl_fim_while;
             }
           ;
+
+CMD_FUNCTION : FUNCTION ID { duplicateVariable( Var, $2.c[0], $2.linha, $2.coluna ); } 
+             '(' EMPILHA_TS LISTA_PARAMs ')' '{' CMDs '}'
+           { 
+             string lbl_endereco_funcao = gera_label( "func_" + $2.c[0] );
+             string definicao_lbl_endereco_funcao = ":" + lbl_endereco_funcao;
+             
+             $$.c = $2.c + "&" + $2.c + "{}"  + "=" + "'&funcao'" +
+                    lbl_endereco_funcao + "[=]" + "^";
+             funcoes = funcoes + definicao_lbl_endereco_funcao + $6.c + $9.c +
+                       "undefined" + "@" + "'&retorno'" + "@"+ "~";
+             ts.pop_back(); 
+             is_function_scope = false; 
+           }
+         ;
+
+LISTA_PARAMs : PARAMs
+           | { $$.c.clear(); }
+           ;
+           
+PARAMs : PARAMs ',' PARAM  
+       { // a & a arguments @ 0 [@] = ^ 
+         $$.c = $1.c + $3.c + "&" + $3.c + "arguments" + "@" + to_string( $1.contador )
+                + "[@]" + "=" + "^"; 
+         is_function_scope = true; 
+         if( $3.valor_default.size() > 0 ) {
+           // Gerar código para testar valor default.
+         }
+         $$.contador = $1.contador + $3.contador; 
+       }
+     | PARAM 
+       { // a & a arguments @ 0 [@] = ^ 
+         $$.c = $1.c + "&" + $1.c + "arguments" + "@" + "0" + "[@]" + "=" + "^"; 
+         is_function_scope = true; 
+         if( $1.valor_default.size() > 0 ) {
+           // Gerar código para testar valor default.
+         }
+         $$.contador = $1.contador; 
+       }
+     ;
+     
+PARAM : ID 
+      { $$.c = $1.c;      
+        $$.contador = 1;
+        $$.valor_default.clear();
+        duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ); 
+      }
+    | ID '=' E
+      { // Código do IF
+        $$.c = $1.c;
+        $$.contador = 1;
+        $$.valor_default = $3.c;         
+        duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ); 
+      }
+    ;
 
 CMD_FOR : FOR '(' PRIM_E ';' E ';' E ')' CMD 
         { string lbl_fim_for = gera_label( "fim_for" );
@@ -246,7 +359,19 @@ CMD_IF : IF '(' E ')' CMD
                    ;
          }
        ;
-        
+
+LISTA_ARGs : ARGs
+           | { $$.clear(); }
+           ;
+
+ARGs : ARGs ',' E
+       { $$.c = $1.c + $3.c;
+         $$.contador++; }
+     | E
+       { $$.c = $1.c;
+         $$.contador++; }
+     ;   
+
 LVALUE : ID 
        ;
        
@@ -294,11 +419,17 @@ E : LVALUE '=' E
     | CDOUBLE
     | CSTRING
     | CINT   
-    | OBJ
+    | OBJ  {$$.c = vector<string>{"{}"};}
     | LVALUE 
-    {  nonVariable( $1.c[0], false ); $$.c = $1.c + "@"; } 
-    | LVALUEPROP
-    {  nonVariable( $1.c[0], false );$$.c = $1.c + "[@]"; }
+    { if(!is_function_scope) nonVariable( $1.c[0], false ); $$.c = $1.c + "@";}  
+  | LVALUEPROP
+    { if(!is_function_scope) nonVariable( $1.c[0], false ); $$.c = $1.c + "[@]"; }
+    | E '(' LISTA_ARGs ')'
+    {$$.c = $3.c + to_string( $3.contador ) + $1.c + "$";}
+    | '[' ']'             
+    {$$.c = vector<string>{"[]"};}
+  | '{' '}'
+    {$$.c = vector<string>{"{}"};}
     ;
 
   

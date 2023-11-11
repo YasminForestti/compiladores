@@ -1,157 +1,170 @@
 Failed tests
-Test 4: #4 if com else
-Test 5: #5 Objetos e arrays
-Test 6: #6 while
-Test 7: #7 for
-Test 8: #8 multiplicação de matrizes
-Test 4: #4 if com else
+Test 2: #2 Blocos e variáveis
+Test 3: #3 Variável duplicada
+Test 4: #4 Escopo
+Test 5: #5 Escopo
+Test 15: #15 Função com parâmetros default
+Test 16: #16 Função com parâmetros default complicados
+Test 2: #2 Blocos e variáveis
 Incorrect program output
 --- Input ---
-let a = "ABA", c = 'CATE', resultado;
-if( a == c )
-  resultado = "Ta' errado!";
-else if( a < c )
-{
-  resultado = "a vem antes de c: ";
-  resultado += a + '<' + c ;
+const a = 9;
+function log( msg ) {
+  msg asm{println # undefined};
 }
-else
-  resultado = "Deu ruim!";
+
+var c = [
+];
+(log)( c );
+{ let a = 3.1; }
+{ const a = 8;
+  let b = 7;
+  c = b; }
+var c = c+ c++;
 
 --- Program output ---
+Erro: a variável 'a' já foi declarada na linha 1.
 === Console ===
-=== Erro: Instrução inválida: : ===
-=== Instrução: 4 ===
 === Vars ===
-|{ }|
+|{ undefined: undefined; }|
 === Pilha ===
-|syntax|
-|error|
-|Proximo|
-|a|
 
 --- Expected output (exact text)---
 === Console ===
+[ ]
 === Vars ===
-|{ a: ABA; c: CATE; resultado: a vem antes de c: ABA<CATE; }|
+|{ a: 9; c: 14; log: { &funcao: ##; }; undefined: undefined; }|
 === Pilha ===
 
-Test 5: #5 Objetos e arrays
+Test 3: #3 Variável duplicada
 Incorrect program output
 --- Input ---
-let obj = {}, i = -2;
-obj.nome = "Manoel";
-obj.nums = [];
-obj.nums[0]
-= 12 ;
-obj.nums[3] = 12 ;
-obj.nums[3] += 1 ;
-obj.nums[i++ + 3] = 45;
-obj['nom' + 'e'] = obj.nome + "!";
+let b, c;
+{ const a = 0;
+  var c;
+}
+let a = 8;
+if( a ) {[];}
+else {
+  let b, d = { };
+}
+let d;
+let a;
 
 --- Program output ---
+Erro: a variável 'c' já foi declarada na linha 1.
 === Console ===
-=== Erro: Instrução inválida: : ===
-=== Instrução: 4 ===
 === Vars ===
-|{ }|
+|{ undefined: undefined; }|
 === Pilha ===
-|syntax|
-|error|
-|Proximo|
-|a|
+
+--- Expected output (exact text)---
+Erro: a variável 'a' já foi declarada na linha 5.
+=== Console ===
+=== Vars ===
+|{ undefined: undefined; }|
+=== Pilha ===
+
+Test 4: #4 Escopo
+Incorrect program output
+--- Input ---
+function print(x) { x asm{println # undefined};
+}
+var a, b = [];
+const c = -1;
+print( c + c );
+(b)[0] = true;
+if( b[0] ) {
+  let b = { };
+  (b).m = 9;
+  print( b );
+  a = b.m;
+}
+
+--- Program output ---
+Erro: a variável 'b' já foi declarada na linha 3.
+=== Console ===
+=== Vars ===
+|{ undefined: undefined; }|
+=== Pilha ===
 
 --- Expected output (exact text)---
 === Console ===
+-2
+{ m: 9; }
 === Vars ===
-|{ i: -1; obj: { nome: Manoel!; nums: [ 0: 12; 1: 45; 2: undefined; 3: 13; ]; }; }|
+|{ a: 9; b: [ 0: true; ]; c: -1; print: { &funcao: ##; }; undefined: undefined; }|
 === Pilha ===
 
-Test 6: #6 while
+Test 5: #5 Escopo
 Incorrect program output
 --- Input ---
-let i = 0, j = -1, x = 9, b = [];
-while( i < x - 2*3 + 2.1 ) {
-  b[i] = j;
-  i = i + 1;
-  j = i / 2.0 + j;
-};
-j = x = 0;
-
---- Program output ---
-=== Console ===
-=== Erro: Instrução inválida: : ===
-=== Instrução: 4 ===
-=== Vars ===
-|{ }|
-=== Pilha ===
-|syntax|
-|error|
-|Proximo|
-|a|
-
---- Expected output (exact text)---
-=== Console ===
-=== Vars ===
-|{ b: [ 0: -1; 1: -0.5; 2: 0.5; 3: 2; 4: 4; 5: 6.5; ]; i: 6; j: 0; x: 0; }|
-=== Pilha ===
-
-Test 7: #7 for
-Incorrect program output
---- Input ---
-let a = {}, campo = "c";
-
-for( let i = 0; i < 6; i = i + 2 ) {
-  a[campo = campo + i] = i;
-};
-
---- Program output ---
-=== Console ===
-=== Erro: Instrução inválida: : ===
-=== Instrução: 4 ===
-=== Vars ===
-|{ }|
-=== Pilha ===
-|syntax|
-|error|
-|Proximo|
-|a|
-
---- Expected output (exact text)---
-=== Console ===
-=== Vars ===
-|{ a: { c0: 0; c02: 2; c024: 4; }; campo: c024; i: 6; }|
-=== Pilha ===
-
-Test 8: #8 multiplicação de matrizes
-Incorrect program output
---- Input ---
-let a = [], b = [], c = [];
-let i, j, k;
-for( i = 0; i < 4; i = i + 1 ) {
-  a[i] = [];
-  b[i] = [];
-  for( j = 0; j < 4; j += 1 ) {
-    a[i][j] = b[i][j] = 1.1/(i+j+1.0);;
+var a, b = [];
+const c = -1;
+b[0] = true;
+function print(x) { x asm{println # undefined};
+  0 asm{undefined .};
+  return 0;
+}
+if( b[0] ) { let a = -1; {
+   let b = { };
+    b.m = 9;
+    print( b );
   }
+  a = b;
 }
 
-for( i = 0; i < 4; i = i + 1 ) {
-  c[i] = [];
-  for( j = 0; j < 4; j = j + 1 ) {
-    c[i][j] = 0;
-    for( k = 0; k < 4; k = k + 1 ) {
-      c[i][j] = c[i][j] + a[i][k] * b[k][j];
-    }
-  }
+--- Program output ---
+Erro: a variável 'a' já foi declarada na linha 1.
+=== Console ===
+=== Vars ===
+|{ undefined: undefined; }|
+=== Pilha ===
+
+--- Expected output (exact text)---
+=== Console ===
+{ m: 9; }
+=== Vars ===
+|{ a: undefined; b: [ 0: true; ]; c: -1; print: { &funcao: ##; }; undefined: undefined; }|
+|{ a: -1; }|
+|{ b: { m: 9; }; }|
+|{ &retorno: ##; arguments: [ 0: { m: 9; }; ]; x: { m: 9; }; }|
+=== Pilha ===
+|0|
+|undefined|
+
+Test 15: #15 Função com parâmetros default
+Incorrect program output
+--- Input ---
+
+function f( x = 9, y = 8.1 ) {
+  log( 'Parametros: ' ); log( x ); log( ' ' ); log( y, true );
+  return x + y;
 }
+
+function log( msg = 'Default!', pular_linha = false ) {
+  if( pular_linha )
+    msg asm{println # undefined};
+  else
+    msg asm{print # undefined};
+}
+
+log();
+log( '-', true );
+log( f(), true );
+log( 'F = ' + f(), true );
+let x = f(),
+    a = f( 1 ),
+    b = f( false, 8 ),
+    c = f( 1, 2 );
+
 
 --- Program output ---
 === Console ===
 === Erro: Instrução inválida: : ===
 === Instrução: 4 ===
 === Vars ===
-|{ }|
+|{ undefined: undefined; }|
 === Pilha ===
 |syntax|
 |error|
@@ -160,6 +173,70 @@ for( i = 0; i < 4; i = i + 1 ) {
 
 --- Expected output (exact text)---
 === Console ===
+Default!-
+Parametros: 9 8.1
+17.1
+Parametros: 9 8.1
+Default!
+Parametros: 9 8.1
+Parametros: 1 8.1
+Parametros: false 8
+Parametros: 1 2
 === Vars ===
-|{ a: [ 0: [ 0: 1.1; 1: 0.55; 2: 0.366667; 3: 0.275; ]; 1: [ 0: 0.55; 1: 0.366667; 2: 0.275; 3: 0.22; ]; 2: [ 0: 0.366667; 1: 0.275; 2: 0.22; 3: 0.183333; ]; 3: [ 0: 0.275; 1: 0.22; 2: 0.183333; 3: 0.157143; ]; ]; b: [ 0: [ 0: 1.1; 1: 0.55; 2: 0.366667; 3: 0.275; ]; 1: [ 0: 0.55; 1: 0.366667; 2: 0.275; 3: 0.22; ]; 2: [ 0: 0.366667; 1: 0.275; 2: 0.22; 3: 0.183333; ]; 3: [ 0: 0.275; 1: 0.22; 2: 0.183333; 3: 0.157143; ]; ]; c: [ 0: [ 0: 1.72257; 1: 0.968; 2: 0.685667; 3: 0.533937; ]; 1: [ 0: 0.968; 1: 0.560969; 2: 0.403333; 3: 0.316905; ]; 2: [ 0: 0.685667; 1: 0.403333; 2: 0.292081; 3: 0.230476; ]; 3: [ 0: 0.533937; 1: 0.316905; 2: 0.230476; 3: 0.18233; ]; ]; i: 4; j: 4; k: 4; }|
+|{ a: 9.1; b: undefined; c: 3; f: { &funcao: ##; }; log: { &funcao: ##; }; undefined: undefined; x: 17.1; }|
 === Pilha ===
+
+Test 16: #16 Função com parâmetros default complicados
+Incorrect program output
+--- Input ---
+function log( msg = 'Default!', pular_linha = f() ) {
+  if( pular_linha )
+    msg asm{println # undefined};
+  else
+    msg asm{print # undefined};
+}
+
+function f( a = f( 1 ) ) {
+  log( 'Parametro a: ', false ); log( ' ', false ); log( a, true );
+  if( a == true )
+    return false;
+  else
+    return a == 1;
+}
+
+log( f() );
+log( ' ', true );
+log( f( 2 ), true );
+let a = f();
+
+--- Program output ---
+=== Console ===
+=== Erro: Instrução inválida: : ===
+=== Instrução: 4 ===
+=== Vars ===
+|{ undefined: undefined; }|
+=== Pilha ===
+|syntax|
+|error|
+|Proximo|
+|a|
+
+--- Expected output (exact text)---
+=== Console ===
+Parametro a:  1
+Parametro a:  true
+Parametro a:  1
+Parametro a:  true
+false
+Parametro a:  2
+false
+Parametro a:  1
+Parametro a:  true
+=== Vars ===
+|{ a: false; f: { &funcao: ##; }; log: { &funcao: ##; }; undefined: undefined; }|
+=== Pilha ===
+
+Summary of tests
++------------------------------+
+| 17 tests run/11 tests passed |
++------------------------------+
