@@ -2,14 +2,16 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
-#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <map>
-
+#include <algorithm>
 using namespace std;
+
 int linha = 1, coluna = 0; 
+
 bool is_function_scope = false;
+
 
 struct Atributos {
   vector<string> c; // Código
@@ -25,25 +27,15 @@ struct Atributos {
     contador = 0;
   }
 };
-
 #define YYSTYPE Atributos
 
-extern "C" int yylex();
-int yyparse();
-void yyerror(const char *);
-
 enum TipoDecl { Let = 1, Const, Var };
-
 map< int, string > nomeTipoDecl = { 
   { Let, "let" }, 
   { Const, "const" }, 
   { Var, "var" }
 };
 
-struct Var {
-  int linha, coluna;
-  TipoDecl tipo;
-};
 struct Simbolo {
   TipoDecl tipo;
   int linha;
@@ -52,6 +44,10 @@ struct Simbolo {
 
 vector< map< string, Simbolo > > ts = { map< string, Simbolo >{} }; 
 vector<string> funcoes;
+
+extern "C" int yylex();
+int yyparse();
+void yyerror(const char *);
 
 
 vector<string> tokeniza(string asmLine){
@@ -76,7 +72,7 @@ string trim(string str, string charsToRemove){
 	return str;
 }
 
-void nonVariable(string nome, bool modificavel) {
+void nonVariable( string nome, bool modificavel ) {
   for( int i = ts.size() - 1; i >= 0; i-- ) {  
     auto& atual = ts[i];
 
@@ -89,7 +85,11 @@ void nonVariable(string nome, bool modificavel) {
         return;
       }
     }
-}}
+  }
+
+  cerr << "Variavel '" << nome << "' não declarada." << endl;
+  exit( 1 );     
+}
 
 vector<string> duplicateVariable( TipoDecl tipo, string nome, int linha, int coluna) {
   auto& topo = ts.back();    
@@ -129,16 +129,16 @@ vector<string> operator+( string a, vector<string> b ) {
 vector<string> resolve_enderecos( vector<string> entrada ) {
   map<string,int> label;
   vector<string> saida;
-  for( int i = 0; i < entrada.size(); i++ ) 
-    if( entrada[i][0] == ':' ) 
+  for( int i = 0; i < entrada.size(); i++ )
+    if( entrada[i][0] == ':' )
         label[entrada[i].substr(1)] = saida.size();
     else
       saida.push_back( entrada[i] );
-  
-  for( int i = 0; i < saida.size(); i++ ) 
+
+  for( int i = 0; i < saida.size(); i++ )
     if( label.count( saida[i] ) > 0 )
         saida[i] = to_string(label[saida[i]]);
-    
+
   return saida;
 }
 
@@ -287,9 +287,16 @@ CMD_FOR : FOR '(' PRIM_E ';' E ';' E ')' CMD
         ;
 
 CMD_IF : IF '(' E ')' CMD
-        {   string lbl_fim_if = gera_label( "lbl_fim_if" );
-          $$.c = $3.c + "!" + lbl_fim_if + "?" +
-                 $5.c + (":" + lbl_fim_if);
+        { string lbl_true = gera_label( "lbl_true" );
+          string lbl_fim_if = gera_label( "lbl_fim_if" );
+          string definicao_lbl_true = ":" + lbl_true;
+          string definicao_lbl_fim_if = ":" + lbl_fim_if;
+          $$.c = $3.c +
+                 lbl_true + "?" +
+                 lbl_fim_if + "#" +
+                 definicao_lbl_true + $5.c +
+                 definicao_lbl_fim_if
+                 ;
         }
         | IF '(' E ')' CMD ELSE CMD
         {  string lbl_true = gera_label( "lbl_true" );
@@ -407,6 +414,7 @@ E : LVALUE '=' E
     | CDOUBLE
     | CSTRING
     | CINT   
+    | BOOL
     | OBJ  {$$.c = vector<string>{"{}"};}
     | LVALUE 
     { if(!is_function_scope) nonVariable( $1.c[0], false ); $$.c = $1.c + "@";}  

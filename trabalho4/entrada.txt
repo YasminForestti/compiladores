@@ -1,13 +1,12 @@
-const a = 9;
-function log( msg ) {
-  msg asm{println # undefined};
+function print(x) { x asm{println # undefined};
 }
-
-var c = [
-];
-(log)( c );
-{ let a = 3.1; }
-{ const a = 8;
-  let b = 7;
-  c = b; }
-var c = c+ c++;
+var a, b = [];
+const c = -1;
+print( c + c );
+(b)[0] = true;
+if( b[0] ) {
+  let b = { };
+  (b).m = 9;
+  print( b );
+  a = b.m;
+}
