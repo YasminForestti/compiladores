@@ -14,7 +14,7 @@ bool is_function_scope = false;
 
 
 struct Atributos {
-  vector<string> c; // Código
+  vector<string> c;
   int contador = 0;         
   vector<string> valor_default; 
 
@@ -86,9 +86,11 @@ void nonVariable( string nome, bool modificavel ) {
       }
     }
   }
-
-  cerr << "Variavel '" << nome << "' não declarada." << endl;
-  exit( 1 );     
+  if(nome != "undefined"){
+    cerr << "Variavel '" << nome << "' não declarada." << endl;
+    exit( 1 );   
+  }
+  
 }
 
 vector<string> duplicateVariable( TipoDecl tipo, string nome, int linha, int coluna) {
@@ -188,7 +190,7 @@ CMD : CMD_LET ';'
     | CMD_FUNCTION
     | RETURN E ';'
       { $$.c = $2.c + "'&retorno'" + "@" + "~"; }
-    | E ASM 
+    | E ASM ';'
       { $$.c = $1.c + $2.c + "^"; }
     | '{' EMPILHA_TS CMDs '}'
       { ts.pop_back();
@@ -240,16 +242,36 @@ PARAMs : PARAMs ',' PARAM
        { $$.c = $1.c + $3.c + "&" + $3.c + "arguments" + "@" + to_string( $1.contador ) + "[@]" + "=" + "^"; 
          is_function_scope = true; 
          if( $3.valor_default.size() > 0 ) {
-           // Gerar código para testar valor default.
+            string lbl_true = gera_label( "lbl_true" );
+            string lbl_fim_if = gera_label( "lbl_fim_if" );
+            string definicao_lbl_true = ":" + lbl_true;
+            string definicao_lbl_fim_if = ":" + lbl_fim_if;
+            $$.c = $$.c + 
+                  $3.c + "@" + "undefined"+"@" + "=="+
+                  lbl_true + "?" +
+                  lbl_fim_if + "#" +
+                  definicao_lbl_true + $3.c + $3.valor_default + "="  + "^"+
+                  definicao_lbl_fim_if
+                  ;
          }
          $$.contador = $1.contador + $3.contador; 
        }
      | PARAM 
-       { // a & a arguments @ 0 [@] = ^ 
+       { 
          $$.c = $1.c + "&" + $1.c + "arguments" + "@" + "0" + "[@]" + "=" + "^"; 
          is_function_scope = true; 
          if( $1.valor_default.size() > 0 ) {
-           // Gerar código para testar valor default.
+           string lbl_true = gera_label( "lbl_true" );
+            string lbl_fim_if = gera_label( "lbl_fim_if" );
+            string definicao_lbl_true = ":" + lbl_true;
+            string definicao_lbl_fim_if = ":" + lbl_fim_if;
+            $$.c = $$.c + 
+                  $1.c + "@" + "undefined"+"@" + "==" +
+                  lbl_true + "?" +
+                  lbl_fim_if + "#" +
+                  definicao_lbl_true + $1.c + $1.valor_default + "="  + "^"+
+                  definicao_lbl_fim_if
+                  ;
          }
          $$.contador = $1.contador; 
        }
