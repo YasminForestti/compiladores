@@ -1,0 +1,19 @@
+function log( msg = 'Default!', pular_linha = f() ) {
+  if( pular_linha )
+    msg asm{println # undefined};
+  else
+    msg asm{print # undefined};
+}
+
+function f( a = f( 1 ) ) {
+  log( 'Parametro a: ', false ); log( ' ', false ); log( a, true );
+  if( a == true )
+    return false;
+  else
+    return a == 1;
+}
+
+log( f() );
+log( ' ', true );
+log( f( 2 ), true );
+let a = f();
