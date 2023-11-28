@@ -11,13 +11,13 @@ INT	    {D}+
 DOUBLE      {D}+"."{D}+([Ee][+\-]?{D}+)?
 ID          {L}({L}|{D})*
 BOOL      true|false
+
 %%
 
 "\t"       { coluna += 4; }
 " "        { coluna++; }
 "\n"       { linha++; coluna = 1; }
-[ \n\r\t]  { }
-"{}"       { return token( OBJ ); } 
+[ \n\r\t]  { } 
 "[]"       { return token( ARRAY ); } 
 "&&"       { return token( AND ); }
 "||"       { return token( OR ); }

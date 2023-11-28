@@ -201,6 +201,19 @@ CMD : CMD_LET ';'
       {$$.clear();}
     ;
 
+
+OBJETO : '{' CAMPOs '}'
+    | '{' '}' {$$.c = vector<string>{"{}"};}
+    ;
+
+
+CAMPOs : CAMPO ',' CAMPOs { $$.c = $1.c + $3.c; } 
+       | CAMPO
+       ;
+
+CAMPO : ID ':' E { $$.c = $1.c + $3.c + "=" + "^"; }
+      ;
+
 EMPILHA_TS : { ts.push_back( map< string, Simbolo >{} ); } 
            ;
 
@@ -284,7 +297,7 @@ PARAM : ID
         duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ); 
       }
     | ID '=' E
-      { // Código do IF
+      { 
         $$.c = $1.c;
         $$.contador = 1;
         $$.valor_default = $3.c;         
@@ -387,6 +400,7 @@ ARGs : ARGs ',' E
        { $$.c = $1.c + $3.c; $$.contador++; }
      | E
        { $$.c = $1.c; $$.contador++; }
+      | OBJETO
      ;   
 
 LVALUE : ID 
@@ -400,7 +414,7 @@ E : LVALUE '=' E
     { $$.c = $1.c + $3.c + "="; nonVariable( $1.c[0], true );}
     | LVALUEPROP '=' E 	
     {nonVariable( $1.c[0], true ); $$.c = $1.c + $3.c + "[=]"; }
-    | LVALUE '=' '{' '}'        
+    | LVALUE '=' '{'    
     {nonVariable( $1.c[0], true ); $$.c = $1.c + vector<string>{"{}"} + "="; } 
     | LVALUEPROP '=' '{' '}'    
     {nonVariable( $1.c[0], true ); $$.c = $1.c + vector<string>{"{}"} + "[=]"; }
@@ -437,7 +451,7 @@ E : LVALUE '=' E
     | CSTRING
     | CINT   
     | BOOL
-    | OBJ  {$$.c = vector<string>{"{}"};}
+    /* | BLVAZIO */
     | LVALUE 
     { if(!is_function_scope) nonVariable( $1.c[0], false ); $$.c = $1.c + "@";}  
     | LVALUEPROP
@@ -446,11 +460,11 @@ E : LVALUE '=' E
     {$$.c = $3.c + to_string( $3.contador ) + $1.c + "$";}
     | '[' ']'             
     {$$.c = vector<string>{"[]"};}
-    | '{' '}'
-    {$$.c = vector<string>{"{}"};}
     ;
 
-  
+/* BLVAZIO : OBJETO
+        {$$.c = vector<string>{"{}"};}
+        ;  */
 %%
 
 #include "lex.yy.c"
