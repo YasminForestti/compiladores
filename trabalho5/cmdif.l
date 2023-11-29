@@ -18,7 +18,6 @@ BOOL      true|false
 " "        { coluna++; }
 "\n"       { linha++; coluna = 1; }
 [ \n\r\t]  { } 
-"[]"       { return token( ARRAY ); } 
 "&&"       { return token( AND ); }
 "||"       { return token( OR ); }
 "<="       { return token( ME_IG ); }

@@ -158,7 +158,7 @@ void print( vector<string> codigo ) {
 
 %}
 
-%token IF ELSE FOR WHILE LET CONST VAR OBJ ARRAY FUNCTION ASM RETURN
+%token IF ELSE FOR WHILE LET CONST VAR OBJ FUNCTION ASM RETURN
 %token ID CDOUBLE CSTRING CINT BOOL
 %token AND OR ME_IG MA_IG DIF IGUAL
 %token MAIS_IGUAL MAIS_MAIS
@@ -415,7 +415,18 @@ LVALUEPROP : E '[' E ']' { $$.c = $1.c + $3.c;}
            | E '.' ID    { $$.c = $1.c + $3.c;}
            ;
 
-E : LVALUE '=' E 
+ARRAY : '[' ARRAY_ARGs ']' {$$.c = "[]" + $2.c;}
+      ;
+
+ARRAY_ARGs : ARRAY_ARGs ',' ARRAY_ARG { $$.c = $1.c + to_string( $1.contador ) + $3.c + "[<=]"; $$.contador++; }
+           | ARRAY_ARG { $$.c = to_string( $1.contador ) + $1.c + "[<=]"; $$.contador++; }
+           ;
+
+ARRAY_ARG : E
+          | OBJETO
+          ;
+
+E :LVALUE '=' E 
     { $$.c = $1.c + $3.c + "="; nonVariable( $1.c[0], true );}
     | LVALUEPROP '=' E 	
     {nonVariable( $1.c[0], true ); $$.c = $1.c + $3.c + "[=]"; }
@@ -451,12 +462,10 @@ E : LVALUE '=' E
       { $$.c = $1.c + $3.c + $2.c; }
     | '(' E ')' { $$.c = $2.c; }
     | ARRAY             
-    {$$.c = vector<string>{"[]"};}
     | CDOUBLE
     | CSTRING
     | CINT   
     | BOOL
-    /* | BLVAZIO */
     | LVALUE 
     { if(!is_function_scope) nonVariable( $1.c[0], false ); $$.c = $1.c + "@";}  
     | LVALUEPROP

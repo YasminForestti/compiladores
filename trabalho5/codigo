@@ -1,1 +1,1 @@
-o & o {} campo 'aba' [<=] pi 31415.0 10000.0 / [<=] obj {} g 56 [<=] [<=] = ^ <{ b & b {} s o @ [<=] = ^ 0 . ^ }> . 
+log & log {} = '&funcao' 57 [=] ^ console & console {} log log @ [<=] teste [] 0 'aba' [<=] 1 'cate' [<=] [<=] = ^ [] 0 1 [<=] 1 2 [<=] 2 3 [<=] 1 console @ log [@] $ ^ console @ teste [@] 1 console @ log [@] $ ^ . msg & msg arguments @ 0 [@] = ^ i & i arguments @ 1 [@] = ^ msg @ println # undefined ^ undefined @ '&retorno' @ ~ 

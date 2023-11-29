@@ -1,9 +1,8 @@
-let o = {
-  campo: 'aba',
-  pi: 31415.0 / 10000.0,
-  obj: { g: 56 }
-};
-{
-  let b = { s:o };
-  0 asm{.};
+function log( msg, i ) {
+  msg asm{println # undefined};
 }
+
+let console = { log: log, teste : [ 'aba', 'cate' ] };
+
+console.log( [1, 2, 3] );
+console.log( console.teste );
