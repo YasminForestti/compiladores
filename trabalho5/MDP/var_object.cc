@@ -37,7 +37,7 @@ public:
       o << "{ ";
       ::for_each( atr.begin(), atr.end(), 
 		  [&o]( auto x ){ 
-		    if( online_judge && x.first == "&funcao" )
+		    if( online_judge && (x.first == "&funcao" || x.first == "&retorno") )
 		      o << x.first << ": ##; "; 
 		    else
 		      o << x.first << ": " << x.second << "; "; 
@@ -50,8 +50,8 @@ public:
     virtual Var rvalue( const string& st ) const { 
       if( auto x = atr.find( st ); x != atr.end() )
 	return x->second;
-      
-      return Var(); 
+      else
+	return Var(); 
     }
     
     virtual bool hasProperty( const string& nome ) const { return atr.find( nome ) != atr.end(); }
@@ -79,7 +79,7 @@ public:
     virtual void print( ostream& o ) const {
       int i = 0;
       o << "[ "; 
-      ::for_each( a.begin(), a.end(), [&o,&i]( auto x ){ o << x << " "; } );
+      ::for_each( a.begin(), a.end(), [&o,&i]( auto x ){ o << i++ << ": " << x << "; "; } );
       o << "]"; 
     }
         
@@ -207,7 +207,6 @@ public:
     }, v );    
   }
 
-  
   Var operator()( const Var& arg ) const {
     return visit( composer{
       [&arg]( const shared_ptr<Object>& obj ) -> Var { return obj->executa( arg ); },
@@ -229,7 +228,7 @@ public:
  
   const Var operator []( const Var& index ) const  { 
     if( v.index() != OBJECT )
-      throw newErro( "Essa variável não é um objeto: " + asString() );
+      throw newErro( "Essa variável não é um objeto: " + toString() );
     
     return visit( composer{
       [this]( int n ) -> Var { return n < 0 ? get<OBJECT>( v )->rvalue( trim( to_string( n ) ) ) : get<OBJECT>( v )->rvalue( n ); },
@@ -380,6 +379,18 @@ public:
   };
 
   static constexpr auto ou = composer{
+    []( Undefined a, bool b ) { return b; },                
+    []( Undefined a, char b ){ return b; },       
+    []( Undefined a, int b ){ return b; },       
+    []( Undefined a, double b ){ return b; },       
+    []( Undefined a, const string& b ){ return b; },       
+
+    []( bool a, Undefined b ){ return a; },     
+    []( char a, Undefined b ){ return a; },       
+    []( int a, Undefined b ){ return a; },       
+    []( double a, Undefined b ){ return a; },       
+    []( const string& a, Undefined b ){ return a; },       
+           
     []( bool a, bool b ){ return a || b; },   
     undef
   };
@@ -389,7 +400,8 @@ public:
     undef
   };
         
-  static inline constexpr Var selector( auto operador, const Var& a, const Var& b ) {
+  template <typename Opr>
+  static inline constexpr Var selector( Opr operador, const Var& a, const Var& b ) {
     return selector( [&b,operador](const auto& av) -> Var { 
       return selector( [&av,operador](const auto& bv) -> Var { 
 	return Var( operador( av, bv ) ); 
@@ -397,7 +409,8 @@ public:
     }, a );
   }
 
-  static Var selector( auto operador, const Var& a ) {
+  template <typename Opr>
+  static Var selector( Opr operador, const Var& a ) {
     // Essa opção demora muito para compilar.
     // return visit( [operador](const auto& av) -> Var { return Var( operador( av ) ); } , a.v );
     // Usar uma implementação alternativa
@@ -441,6 +454,19 @@ public:
       throw newErro( "Essa variável não é um número inteiro: " + toString() );
       
     return get<INT>( v );
+  }
+
+  bool isInt() const {
+    return v.index() == INT;
+  }
+
+  bool isFunction() const {
+    if( v.index() == OBJECT ) {
+      if( (*this)["&funcao"].isInt() )
+        return true;
+    }
+
+    return false;
   }
   
   string asString() const {
@@ -536,7 +562,7 @@ inline Var operator / ( const Var& a, const Var& b ) { return Var::selector( Var
 inline Var operator % ( const Var& a, const Var& b ) { return Var::selector( Var::modulo, a, b ); }
 inline Var operator < ( const Var& a, const Var& b ) { return Var::selector( Var::menor, a, b ); }
 inline Var operator || ( const Var& a, const Var& b ) { return Var::selector( Var::ou, a, b ); }
-inline Var operator && ( const Var& a, const Var& b ) { return Var::selector( Var::e, a, b ); }
+inline Var operator && ( Var& a, Var& b ) { return Var::selector( Var::e, a, b ); }
 
 inline Var operator ! ( const Var& a ) { return !a.asBool(); }
 inline Var operator - ( const Var& a ) { return Var::selector( Var::subtracao, a ); }
@@ -588,3 +614,4 @@ catch( Var::Erro e ) {
 }
 
 #endif
+
