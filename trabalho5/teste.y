@@ -202,8 +202,8 @@ CMD : CMD_LET ';'
     ;
 
 
-OBJETO : '{' CAMPOs '}'
-    | '{' '}' {$$.c = vector<string>{"{}"};}
+OBJETO : '{' CAMPOs '}' {$$.c = "{}" + $2.c;}
+    | '{' '}' {$$.clear();}
     ;
 
 
@@ -211,7 +211,8 @@ CAMPOs : CAMPO ',' CAMPOs { $$.c = $1.c + $3.c; }
        | CAMPO
        ;
 
-CAMPO : ID ':' E { $$.c = $1.c + $3.c + "=" + "^"; }
+CAMPO : ID ':' E { $$.c = $1.c + $3.c + "[<=]"; }
+      | ID ':' OBJETO  {$$.c = $1.c + $3.c + "[<=]";}     
       ;
 
 EMPILHA_TS : { ts.push_back( map< string, Simbolo >{} ); } 
@@ -364,6 +365,8 @@ LET_VARs : LET_VAR ',' LET_VARs { $$.c = $1.c + $3.c; }
 
 LET_VAR : ID  
           { $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ); }
+        | ID '=' OBJETO
+          { $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ) +  $1.c + $3.c + "=" + "^"; }
         | ID '=' E
           { $$.c = duplicateVariable( Let, $1.c[0], $1.linha, $1.coluna ) +  $1.c + $3.c + "=" + "^"; }
         ;
@@ -377,6 +380,8 @@ VAR_VARs : VAR_VAR ',' VAR_VARs { $$.c = $1.c + $3.c; }
 
 VAR_VAR : ID  
           { $$.c = duplicateVariable( Var, $1.c[0], $1.linha, $1.coluna ); }
+        | ID '=' OBJETO
+          { $$.c = duplicateVariable(Var, $1.c[0], $1.linha, $1.coluna ) +  $1.c + $3.c + "=" + "^"; }
         | ID '=' E
           {  $$.c = duplicateVariable( Var, $1.c[0], $1.linha, $1.coluna ) + $1.c + $3.c + "=" + "^"; }
         ;
@@ -388,8 +393,8 @@ CONST_VARs : CONST_VAR ',' CONST_VARs { $$.c = $1.c + $3.c; }
            | CONST_VAR
            ;
 
-CONST_VAR : ID '=' E
-            { $$.c = duplicateVariable( Const, $1.c[0], $1.linha, $1.coluna ) + $1.c + $3.c + "=" + "^"; }
+CONST_VAR : ID '=' E { $$.c = duplicateVariable( Const, $1.c[0], $1.linha, $1.coluna ) + $1.c + $3.c + "=" + "^"; }
+          | ID '=' OBJ  { $$.c = duplicateVariable( Const, $1.c[0], $1.linha, $1.coluna ) +  $1.c + $3.c + "=" + "^"; }
           ;
 
 LISTA_ARGs : ARGs
@@ -462,9 +467,6 @@ E : LVALUE '=' E
     {$$.c = vector<string>{"[]"};}
     ;
 
-/* BLVAZIO : OBJETO
-        {$$.c = vector<string>{"{}"};}
-        ;  */
 %%
 
 #include "lex.yy.c"
